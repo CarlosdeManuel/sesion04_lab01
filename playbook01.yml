@@ -1,0 +1,127 @@
+---
+- name: "Instalacion-configuracion de servidor Web"
+  hosts: nodo01
+  tasks:
+    - name: "Imprimir mensaje por pantalla"
+      debug:
+        msg: |
+          En este ejericicio practicaremos el desarrollo de un playbook desde 0
+          para ello, realizaremos varias tareas para levantar un servidor apache
+    - name: "Instalación de paquete httpd"
+      yum:
+        name: httpd
+        state: present
+
+    - name: "Habilitar en el firewall http"
+      firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+
+    - name: "Habilitar en el firewall https"
+      firewalld:
+        service: https
+        permanent: yes
+        state: enabled
+
+    - name: "Reload firewall"
+      systemd:
+        name: firewalld
+        state: reloaded
+
+   - name: "Arrancar servicio httpd"
+      systemd:
+        name: httpd
+        state: started
+
+    - name: "Arrancar servicio http en arranque"
+      systemd:
+        name: httpd
+        enabled: yes
+
+    - name: "Deshabilitar SELinux del servidor"
+      selinux:
+        state: disabled
+
+    - name: "Crear HOST virtual: crear directorio /var/www/example.com/html"
+      file:
+        path: "/var/www/example.com/html"
+        state: directory
+        owner: root 
+        group: root
+
+    - name: "Crear HOST virtual: crear directorio /var/www/example.com/log"
+      file:
+        path: "/var/www/example.com/log"
+        state: directory
+        owner: root 
+        group: root
+
+    - name: "Crear HOST virtual: Permiso recursivo 755 para /var/www/"
+      file:
+        path: "/var/www/"
+        state: directory
+        mode: '0755'
+        recurse: yes
+
+    - name: "Crear HOST virtual: crear fichero /var/www/example.com/html/index.html"
+      file:
+        path: "/var/www/example.com/html/index.html"
+        state: touch
+
+    - name: "Crear HOST virtual: insertar contenido HTML en archivo index.html"
+      copy:
+        content: |
+          <html>
+            <head>
+              <title>Welcome to Example.com!</title>
+            </head>
+            <body>
+              <h1>Success! The example.com virtual host is working!</h1>
+            </body>
+          </html>
+        dest: "/var/www/example.com/html/index.html"
+
+    - name: "Crear HOST virtual: crear directorio /etc/httpd/sites-available"
+      file:
+        path: "/etc/httpd/sites-available"
+        state: directory
+
+    - name: "Crear HOST virtual: crear directorio /etc/httpd/sites-enabled"
+      file:
+        path: "/etc/httpd/sites-enabled"
+        state: directory
+
+    - name: "Crear HOST virtual: anadir linea a httpd.conf"
+      lineinfile:
+        path: '/etc/httpd/conf/httpd.conf'
+        insertafter: EOF
+        line: 'IncludeOptional sites-enabled/*.conf'
+        state: present
+        validate: apachectl configtest
+    
+    - name: "Crear HOST virtual: crear fichero /etc/httpd/sites-available/example.com.conf' con usuario y permiso root"
+      file:
+        path: '/etc/httpd/sites-available/example.com.conf'
+        state: touch
+        owner: root 
+        group: root
+
+    - name: "Crear HOST virtual: insertar configuración de VirtualHost"
+      copy:
+        content: |
+          <VirtualHost *:80>
+            ServerName www.example.com
+            ServerAlias example.com
+            DocumentRoot /var/www/example.com/html
+            ErrorLog /var/www/example.com/log/error.log
+            CustomLog /var/www/example.com/log/requests.log combined
+          </VirtualHost>
+        dest: '/etc/httpd/sites-available/example.com.conf'
+    
+    - name: "Crear HOST virtual: crear enlace simbolico"
+      file:
+        src: '/etc/httpd/sites-available/example.com.conf'
+        dest: '/etc/httpd/sites-enabled/example.com.conf'
+        state: link
+...
