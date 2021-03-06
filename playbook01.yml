@@ -7,6 +7,7 @@
         msg: |
           En este ejericicio practicaremos el desarrollo de un playbook desde 0
           para ello, realizaremos varias tareas para levantar un servidor apache
+
     - name: "Instalación de paquete httpd"
       yum:
         name: httpd
@@ -29,7 +30,7 @@
         name: firewalld
         state: reloaded
 
-   - name: "Arrancar servicio httpd"
+    - name: "Arrancar servicio httpd"
       systemd:
         name: httpd
         state: started
@@ -85,11 +86,19 @@
     - name: "Crear HOST virtual: crear directorio /etc/httpd/sites-available"
       file:
         path: "/etc/httpd/sites-available"
+        owner: root
+        group: root
+        mode: 0765
+        recurse: yes
         state: directory
 
     - name: "Crear HOST virtual: crear directorio /etc/httpd/sites-enabled"
       file:
         path: "/etc/httpd/sites-enabled"
+        owner: root
+        group: root
+        mode: 0765
+        recurse: yes
         state: directory
 
     - name: "Crear HOST virtual: anadir linea a httpd.conf"
@@ -98,7 +107,6 @@
         insertafter: EOF
         line: 'IncludeOptional sites-enabled/*.conf'
         state: present
-        validate: apachectl configtest
     
     - name: "Crear HOST virtual: crear fichero /etc/httpd/sites-available/example.com.conf' con usuario y permiso root"
       file:
